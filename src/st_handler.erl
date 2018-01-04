@@ -3,8 +3,10 @@
 -export([init/2]).
 
 init(Req0 = #{method := <<"POST">>}, State) ->
-	{ok, NewLongUrl, Req} = cowboy_req:read_body(Req0),
-	{ok, ShortUrl} = st_db:save(NewLongUrl),
+	{ok, LongUrl, Req} = cowboy_req:read_body(Req0),
+	{ok, Random} = st_db:save(LongUrl),
+	%% Replace url with the correct one
+	ShortUrl = erlang:iolist_to_binary([<<"http://localhost:8080/">>, Random]),
 	Req = cowboy_req:reply(200,
 		#{<<"content-type">> => <<"text/plain">>}, 
 		ShortUrl, Req0),

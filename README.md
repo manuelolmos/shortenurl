@@ -6,4 +6,9 @@ An OTP application
 Build
 -----
 
-    $ rebar3 compile
+    $ make build
+
+
+Run
+-----
+	$ make

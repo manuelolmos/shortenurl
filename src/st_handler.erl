@@ -13,6 +13,7 @@ init(Req0 = #{method := <<"POST">>}, State) ->
 init(Req0 = #{method := <<"GET">>}, State) ->
 	case cowboy_req:binding(shortenurl, Req0) of
 		undefined ->
+			lager:warning("There is no shorturl sent"),
 			Req = cowboy_req:reply(404, #{
         	<<"content-type">> => <<"text/plain">>
     		}, <<"Not Found!">>, Req0),

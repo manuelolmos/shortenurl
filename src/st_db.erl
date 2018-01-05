@@ -8,16 +8,24 @@
 
 create() ->
 	st_short_long_url = ets:new(st_short_long_url, [set, public, named_table]),
+	st_long_short_url = ets:new(st_long_short_url, [set, public, named_table]),
 	ok.
 
 save(LongUrl) ->
-	Random = generate_random(),
-	case ets:insert(st_short_long_url, {Random, LongUrl}) of
-		true ->
+	case exists(LongUrl) of
+		{ok, Random} ->
 			{ok, Random};
-		_ ->
-			{error, ets_insertion_error}
+		{error, not_found} ->
+			Random = generate_random(),
+			ets:insert(st_long_short_url, {LongUrl, Random}),
+			case ets:insert(st_short_long_url, {Random, LongUrl}) of
+				true ->
+					{ok, Random};
+				_ ->
+					{error, ets_insertion_error}
+			end
 	end.
+	
 
 get(Random) ->
 	case ets:lookup(st_short_long_url, Random) of
@@ -29,3 +37,11 @@ get(Random) ->
 
 generate_random() ->
 	base64:encode(crypto:strong_rand_bytes(10)).
+
+exists(LongUrl) ->
+	case ets:lookup(st_long_short_url, LongUrl) of
+		[{LongUrl, Random}] ->
+			{ok, Random};
+		_ ->
+			{error, not_found}
+	end.

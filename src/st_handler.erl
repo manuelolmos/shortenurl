@@ -5,7 +5,7 @@
 init(Req0 = #{method := <<"POST">>}, State) ->
 	{ok, LongUrl, Req1} = cowboy_req:read_body(Req0),
 	{ok, Random} = st_db:save(LongUrl),
-	Path = get_server_path(Req1),
+	Path = iolist_to_binary(cowboy_req:uri(Req1)),
 	ShortUrl = erlang:iolist_to_binary([Path, Random]),
 	Req2 = cowboy_req:reply(200,
 		#{<<"content-type">> => <<"text/plain">>}, 
@@ -31,12 +31,3 @@ init(Req0, State) ->
         <<"content-type">> => <<"text/plain">>
     }, <<"Bad request!">>, Req0),
     {ok, Req, State}.
-
-get_server_path(Req0) ->
-	[cowboy_req:scheme(Req0), 
-		<<"://">>, 
-		cowboy_req:host(Req0), 
-		<<":">>, 
-		list_to_binary(integer_to_list(cowboy_req:port(Req0))), 
-		<<"/">>
-	].

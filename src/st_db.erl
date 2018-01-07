@@ -12,15 +12,20 @@ create() ->
 	ok.
 
 save(LongUrl) ->
-	case exists(LongUrl) of
+	case get(st_long_short_url, LongUrl) of
 		{ok, Random} ->
 			{ok, Random};
 		{error, not_found} ->
 			Random = generate_random(),
-			ets:insert(st_long_short_url, {LongUrl, Random}),
 			case ets:insert(st_short_long_url, {Random, LongUrl}) of
 				true ->
-					{ok, Random};
+					case ets:insert(st_long_short_url, {LongUrl, Random}) of
+						true ->
+							{ok, Random};
+						_ ->
+							ets:delete(st_short_long_url, Random),
+							{error, ets_insertion_error}
+					end;
 				_ ->
 					{error, ets_insertion_error}
 			end
@@ -28,20 +33,15 @@ save(LongUrl) ->
 	
 
 get(Random) ->
-	case ets:lookup(st_short_long_url, Random) of
-		[{Random, LongUrl}] ->
-			{ok, LongUrl};
+	get(st_short_long_url, Random).
+
+get(TableName, Key) ->
+	case ets:lookup(TableName, Key) of
+		[{Key, Value}] ->
+			{ok, Value};
 		_ ->
 			{error, not_found}
 	end.
 
 generate_random() ->
 	base64:encode(crypto:strong_rand_bytes(10)).
-
-exists(LongUrl) ->
-	case ets:lookup(st_long_short_url, LongUrl) of
-		[{LongUrl, Random}] ->
-			{ok, Random};
-		_ ->
-			{error, not_found}
-	end.

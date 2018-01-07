@@ -14,20 +14,19 @@ init(Req0 = #{method := <<"POST">>}, State) ->
 init(Req0 = #{method := <<"GET">>}, State) ->
 	case cowboy_req:binding(shortenurl, Req0) of
 		undefined ->
-			lager:warning("There is no shorturl sent"),
-			Req = cowboy_req:reply(404, #{
-        	<<"content-type">> => <<"text/plain">>
-    		}, <<"Not Found!">>, Req0),
-    		{ok, Req, State};
+			lager:error("There is no shorturl sent"),
+			{ok, cowboy_req:reply(404, Req0), State};
 		ShortUrl ->
-			{ok, LongUrl} = st_db:get(ShortUrl),
-			Req1 = cowboy_req:reply(200,
-			#{<<"content-type">> => <<"text/plain">>}, 
-			LongUrl, Req0),
-			{ok, Req1, State}
+			case st_db:get(ShortUrl) of
+				{ok, LongUrl} ->
+					Req1 = cowboy_req:reply(200,
+					#{<<"content-type">> => <<"text/plain">>},
+					LongUrl, Req0),
+					{ok, Req1, State};
+				{error, not_found} ->
+					lager:warning("Shorturl not found"),
+					{ok, cowboy_req:reply(404, Req0), State}
+			end
 	end;
 init(Req0, State) ->
-    Req = cowboy_req:reply(400, #{
-        <<"content-type">> => <<"text/plain">>
-    }, <<"Bad request!">>, Req0),
-    {ok, Req, State}.
+    {ok, cowboy_req:reply(400, Req0), State}.

@@ -19,9 +19,8 @@ init(Req0 = #{method := <<"GET">>}, State) ->
 		ShortUrl ->
 			case st_db:get(ShortUrl) of
 				{ok, LongUrl} ->
-					Req1 = cowboy_req:reply(200,
-					#{<<"content-type">> => <<"text/plain">>},
-					LongUrl, Req0),
+					Req1 = cowboy_req:reply(301, 
+						#{<<"location">> => LongUrl}, Req0),
 					{ok, Req1, State};
 				{error, not_found} ->
 					lager:warning("Shorturl not found"),
